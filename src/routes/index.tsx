@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Gamepad2, MessageSquare, Trophy, Users, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -13,6 +14,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const { user, profile } = useAuth();
+  const loggedIn = !!user;
+
   return (
     <main>
       {/* Hero */}
@@ -20,7 +24,7 @@ function Home() {
         <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, oklch(0.65 0.24 295 / 0.4) 1px, transparent 0)", backgroundSize: "32px 32px" }} />
         <div className="relative mx-auto max-w-6xl px-4 py-24 sm:py-32 text-center">
           <div className="inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-primary-glow mb-6">
-            <Sparkles className="h-3 w-3" /> The community is live
+            <Sparkles className="h-3 w-3" /> {loggedIn ? `Welcome back, @${profile?.username ?? "gamer"}` : "The community is live"}
           </div>
           <h1 className="text-5xl sm:text-7xl font-bold tracking-tight">
             Game. Chill.<br />
@@ -30,16 +34,35 @@ function Home() {
             UnityRevoea is a relaxed corner of the internet for gamers — talk shop in the forums, build your profile, collect badges, find your crew.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link to="/signup">
-              <Button size="lg" className="bg-gradient-primary shadow-glow hover:opacity-90 h-12 px-6">
-                Join the community <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/community">
-              <Button size="lg" variant="outline" className="h-12 px-6 border-border/60">
-                Browse forums
-              </Button>
-            </Link>
+            {loggedIn ? (
+              <>
+                <Link to="/community">
+                  <Button size="lg" className="bg-gradient-primary shadow-glow hover:opacity-90 h-12 px-6">
+                    Go to forums <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                {profile && (
+                  <Link to="/profile/$username" params={{ username: profile.username }}>
+                    <Button size="lg" variant="outline" className="h-12 px-6 border-border/60">
+                      Your profile
+                    </Button>
+                  </Link>
+                )}
+              </>
+            ) : (
+              <>
+                <Link to="/signup">
+                  <Button size="lg" className="bg-gradient-primary shadow-glow hover:opacity-90 h-12 px-6">
+                    Join the community <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/community">
+                  <Button size="lg" variant="outline" className="h-12 px-6 border-border/60">
+                    Browse forums
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -64,16 +87,18 @@ function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="mx-auto max-w-4xl px-4 pb-24">
-        <div className="glass rounded-3xl p-10 text-center shadow-card">
-          <h2 className="text-3xl sm:text-4xl font-bold">Ready to jump in?</h2>
-          <p className="mt-3 text-muted-foreground">Free forever. Make a profile in 30 seconds.</p>
-          <Link to="/signup" className="inline-block mt-6">
-            <Button size="lg" className="bg-gradient-primary shadow-glow">Create account</Button>
-          </Link>
-        </div>
-      </section>
+      {/* CTA — only for guests */}
+      {!loggedIn && (
+        <section className="mx-auto max-w-4xl px-4 pb-24">
+          <div className="glass rounded-3xl p-10 text-center shadow-card">
+            <h2 className="text-3xl sm:text-4xl font-bold">Ready to jump in?</h2>
+            <p className="mt-3 text-muted-foreground">Free forever. Make a profile in 30 seconds.</p>
+            <Link to="/signup" className="inline-block mt-6">
+              <Button size="lg" className="bg-gradient-primary shadow-glow">Create account</Button>
+            </Link>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
