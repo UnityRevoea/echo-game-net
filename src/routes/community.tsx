@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RoleBadge } from "@/components/RoleBadge";
+import { ReportButton } from "@/components/ReportButton";
 
 export const Route = createFileRoute("/community")({
   component: Community,
@@ -152,6 +153,9 @@ function Community() {
                 <span className="inline-flex items-center gap-1"><MessageSquare className="h-3 w-3" /> {p.replyCount}</span>
                 <span>·</span>
                 <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                <span className="ml-auto" onClick={(e) => e.preventDefault()}>
+                  <ReportButton targetType="post" targetId={p.id} size="xs" />
+                </span>
               </div>
             </Link>
           ))}

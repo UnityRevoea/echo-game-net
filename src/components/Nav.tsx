@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 
 export function Nav() {
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, isStaff, signOut } = useAuth();
   const navigate = useNavigate();
 
   const links = [
@@ -36,12 +36,12 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          {isAdmin && (
+          {isStaff && (
             <Link
               to="/admin"
               className="px-3 py-2 text-sm font-medium text-gold hover:text-gold/80 inline-flex items-center gap-1"
             >
-              <Shield className="h-4 w-4" /> Admin
+              <Shield className="h-4 w-4" /> {isAdmin ? "Admin" : "Staff"}
             </Link>
           )}
         </nav>

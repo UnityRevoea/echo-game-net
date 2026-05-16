@@ -130,6 +130,45 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          reporter_id: string
+          resolution_notes: string | null
+          resolver_id: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          reporter_id: string
+          resolution_notes?: string | null
+          resolver_id?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          resolution_notes?: string | null
+          resolver_id?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id?: string
+          target_type?: Database["public"]["Enums"]["report_target"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           awarded_at: string
@@ -196,6 +235,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "volunteer" | "user"
+      report_status: "open" | "resolved" | "dismissed"
+      report_target: "post" | "reply" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -324,6 +365,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "volunteer", "user"],
+      report_status: ["open", "resolved", "dismissed"],
+      report_target: ["post", "reply", "user"],
     },
   },
 } as const
