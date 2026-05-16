@@ -17,6 +17,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as ForumsPostIdRouteImport } from './routes/forums.$postId'
+import { Route as ApiPublicSeedAdminRouteImport } from './routes/api/public/seed-admin'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -58,6 +59,11 @@ const ForumsPostIdRoute = ForumsPostIdRouteImport.update({
   path: '/forums/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSeedAdminRoute = ApiPublicSeedAdminRouteImport.update({
+  id: '/api/public/seed-admin',
+  path: '/api/public/seed-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/forums/$postId': typeof ForumsPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/api/public/seed-admin': typeof ApiPublicSeedAdminRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/forums/$postId': typeof ForumsPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/api/public/seed-admin': typeof ApiPublicSeedAdminRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/forums/$postId': typeof ForumsPostIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/api/public/seed-admin': typeof ApiPublicSeedAdminRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/forums/$postId'
     | '/profile/$username'
+    | '/api/public/seed-admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/forums/$postId'
     | '/profile/$username'
+    | '/api/public/seed-admin'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/forums/$postId'
     | '/profile/$username'
+    | '/api/public/seed-admin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ForumsPostIdRoute: typeof ForumsPostIdRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
+  ApiPublicSeedAdminRoute: typeof ApiPublicSeedAdminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForumsPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/seed-admin': {
+      id: '/api/public/seed-admin'
+      path: '/api/public/seed-admin'
+      fullPath: '/api/public/seed-admin'
+      preLoaderRoute: typeof ApiPublicSeedAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ForumsPostIdRoute: ForumsPostIdRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
+  ApiPublicSeedAdminRoute: ApiPublicSeedAdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
