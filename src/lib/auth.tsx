@@ -12,6 +12,7 @@ export interface Profile {
   bio: string | null;
   avatar_url: string | null;
   banned: boolean;
+  suspended_until: string | null;
   created_at: string;
 }
 

@@ -44,6 +44,7 @@ export type Database = {
       forum_posts: {
         Row: {
           author_id: string
+          category: string
           content: string
           created_at: string
           id: string
@@ -51,6 +52,7 @@ export type Database = {
         }
         Insert: {
           author_id: string
+          category?: string
           content: string
           created_at?: string
           id?: string
@@ -58,6 +60,7 @@ export type Database = {
         }
         Update: {
           author_id?: string
+          category?: string
           content?: string
           created_at?: string
           id?: string
@@ -106,6 +109,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          suspended_until: string | null
           username: string
         }
         Insert: {
@@ -116,6 +120,7 @@ export type Database = {
           created_at?: string
           email: string
           id: string
+          suspended_until?: string | null
           username: string
         }
         Update: {
@@ -126,12 +131,14 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          suspended_until?: string | null
           username?: string
         }
         Relationships: []
       }
       reports: {
         Row: {
+          category: string
           created_at: string
           id: string
           reason: string
@@ -144,6 +151,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string
           created_at?: string
           id?: string
           reason: string
@@ -156,6 +164,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string
           created_at?: string
           id?: string
           reason?: string
