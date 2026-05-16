@@ -7,6 +7,7 @@ import { useAuth, topRole, type AppRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RoleBadge } from "@/components/RoleBadge";
+import { ReportButton } from "@/components/ReportButton";
 
 export const Route = createFileRoute("/forums/$postId")({
   component: PostDetail,
@@ -112,6 +113,7 @@ function PostDetail() {
           </Link>
           <RoleBadge role={topRole(post.authorRoles)} />
           <span>· {new Date(post.created_at).toLocaleString()}</span>
+          <span className="ml-auto"><ReportButton targetType="post" targetId={post.id} size="xs" /></span>
         </div>
         <p className="mt-4 whitespace-pre-wrap leading-relaxed">{post.content}</p>
       </article>
@@ -127,6 +129,7 @@ function PostDetail() {
               </Link>
               <RoleBadge role={topRole(r.authorRoles)} />
               <span>· {new Date(r.created_at).toLocaleString()}</span>
+              <span className="ml-auto"><ReportButton targetType="reply" targetId={r.id} size="xs" /></span>
             </div>
             <p className="mt-2 whitespace-pre-wrap text-sm">{r.content}</p>
           </div>
