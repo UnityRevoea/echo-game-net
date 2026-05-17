@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { MessageSquare, Plus, Search, X } from "lucide-react";
+import { MessageSquare, Plus, Search, X, AlertTriangle, EyeOff as EyeOffIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, topRole, type AppRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RoleBadge } from "@/components/RoleBadge";
 import { ReportButton } from "@/components/ReportButton";
 import { UserAvatar } from "@/components/UserAvatar";
+import { FormatToolbar } from "@/components/FormatToolbar";
 import { POST_CATEGORIES, getCategory, type PostCategory } from "@/lib/forum-constants";
+import { useBlockedUsers } from "@/lib/blocked";
+import { splitContentWarning } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/community")({
@@ -32,19 +35,32 @@ interface PostRow {
   replyCount: number;
 }
 
+const DRAFT_KEY = "ur_post_draft";
+
 function Community() {
   const { user, profile } = useAuth();
+  const { isBlocked } = useBlockedUsers();
   const [posts, setPosts] = useState<PostRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<{ title: string; content: string; category: PostCategory }>({
-    title: "",
-    content: "",
-    category: "general",
+  const [form, setForm] = useState<{ title: string; content: string; category: PostCategory; cw: string }>(() => {
+    if (typeof window === "undefined") return { title: "", content: "", category: "general", cw: "" };
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch { /* noop */ }
+    return { title: "", content: "", category: "general", cw: "" };
   });
   const [posting, setPosting] = useState(false);
   const [filter, setFilter] = useState<PostCategory | "all">("all");
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"new" | "active">("new");
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Persist draft
+  useEffect(() => {
+    if (form.title || form.content || form.cw) localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+  }, [form]);
 
   const load = async () => {
     setLoading(true);
@@ -100,37 +116,45 @@ function Community() {
     if (form.title.trim().length < 3) { toast.error("Title needs at least 3 characters"); return; }
     if (form.content.trim().length < 10) { toast.error("Content needs at least 10 characters"); return; }
     setPosting(true);
+    const cwPrefix = form.cw.trim() ? `[CW: ${form.cw.trim().slice(0, 80)}]\n\n` : "";
     const { error } = await supabase.from("forum_posts").insert({
       author_id: user.id,
       title: form.title.trim().slice(0, 200),
-      content: form.content.trim().slice(0, 5000),
+      content: (cwPrefix + form.content.trim()).slice(0, 5000),
       category: form.category,
     });
     setPosting(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Posted!");
-    setForm({ title: "", content: "", category: "general" });
+    setForm({ title: "", content: "", category: "general", cw: "" });
+    localStorage.removeItem(DRAFT_KEY);
     setShowForm(false);
     load();
   };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return posts.filter((p) => {
-      if (filter !== "all" && p.category !== filter) return false;
-      if (q && !p.title.toLowerCase().includes(q) && !p.content.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [posts, filter, search]);
+    return posts
+      .filter((p) => !isBlocked(p.author_id))
+      .filter((p) => {
+        if (filter !== "all" && p.category !== filter) return false;
+        if (q && !p.title.toLowerCase().includes(q) && !p.content.toLowerCase().includes(q)) return false;
+        return true;
+      })
+      .sort((a, b) => sort === "active" ? b.replyCount - a.replyCount : 0);
+  }, [posts, filter, search, sort, isBlocked]);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
+      {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">Community <span className="text-gradient">forums</span></h1>
-          <p className="mt-2 text-muted-foreground text-sm sm:text-base">
-            {posts.length} {posts.length === 1 ? "thread" : "threads"} · jump in, drop a take, find your crew.
-          </p>
+          <div className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot" />
+            Live · {posts.length} threads
+          </div>
+          <h1 className="mt-2 text-4xl sm:text-5xl font-bold tracking-tight">Forums</h1>
+          <p className="mt-1 text-muted-foreground text-sm">Drop a take. Find your crew. Be nice.</p>
         </div>
         {user && (
           <Button onClick={() => setShowForm((v) => !v)} size="lg" className="bg-gradient-primary shadow-glow">
@@ -144,8 +168,8 @@ function Community() {
         <button
           onClick={() => setFilter("all")}
           className={cn(
-            "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-            filter === "all" ? "bg-foreground text-background border-foreground" : "border-border/60 hover:border-border text-muted-foreground hover:text-foreground",
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+            filter === "all" ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground/40 text-muted-foreground hover:text-foreground",
           )}
         >
           All
@@ -155,75 +179,126 @@ function Community() {
             key={c.value}
             onClick={() => setFilter(c.value)}
             className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-              filter === c.value ? c.color : "border-border/60 hover:border-border text-muted-foreground hover:text-foreground",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+              filter === c.value ? c.chip : "border-border hover:border-foreground/40 text-muted-foreground hover:text-foreground",
             )}
           >
+            <span className={cn("h-1.5 w-1.5 rounded-full", c.dot)} />
             {c.label}
           </button>
         ))}
-        <div className="ml-auto relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search threads..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 w-56"
-          />
+        <div className="ml-auto flex items-center gap-2">
+          <Select value={sort} onValueChange={(v) => setSort(v as "new" | "active")}>
+            <SelectTrigger className="h-9 w-32 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">Newest</SelectItem>
+              <SelectItem value="active">Most active</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search threads..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-9 w-56"
+            />
+          </div>
         </div>
       </div>
 
       {/* New post form */}
       {showForm && user && (
-        <form onSubmit={submit} className="glass rounded-2xl p-6 mb-6 space-y-4 border border-primary/20">
-          <div className="grid gap-2 sm:grid-cols-[1fr_220px]">
+        <form onSubmit={submit} className="surface rounded-2xl p-6 mb-6 space-y-4 shadow-card">
+          <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
             <div>
-              <Label htmlFor="title" className="text-xs uppercase tracking-wide text-muted-foreground">Title</Label>
+              <Label htmlFor="title" className="text-[10px] uppercase tracking-[0.18em] font-mono text-muted-foreground">Title</Label>
               <Input
                 id="title"
                 placeholder="Give it a sharp title..."
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 maxLength={200}
-                className="mt-1.5"
+                className="mt-1.5 h-11 text-base"
               />
+              <div className="text-[10px] text-muted-foreground mt-1 text-right font-mono">{form.title.length}/200</div>
             </div>
             <div>
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Category</Label>
+              <Label className="text-[10px] uppercase tracking-[0.18em] font-mono text-muted-foreground">Category</Label>
               <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as PostCategory })}>
-                <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mt-1.5 h-11"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {POST_CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    <SelectItem key={c.value} value={c.value}>
+                      <span className="inline-flex items-center gap-2">
+                        <span className={cn("h-1.5 w-1.5 rounded-full", c.dot)} /> {c.label}
+                      </span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
+
           <div>
-            <Label htmlFor="content" className="text-xs uppercase tracking-wide text-muted-foreground">Body</Label>
-            <Textarea
-              id="content"
-              placeholder="What's on your mind? Share details, screenshots links, what game, etc."
-              rows={6}
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              maxLength={5000}
+            <Label htmlFor="cw" className="text-[10px] uppercase tracking-[0.18em] font-mono text-muted-foreground inline-flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3" /> Content warning (optional)
+            </Label>
+            <Input
+              id="cw"
+              placeholder="e.g. Elden Ring spoilers, late-game boss"
+              value={form.cw}
+              onChange={(e) => setForm({ ...form, cw: e.target.value })}
+              maxLength={80}
               className="mt-1.5"
             />
-            <div className="text-xs text-muted-foreground mt-1 text-right">{form.content.length} / 5000</div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-            <Button type="submit" disabled={posting} className="bg-gradient-primary">
-              {posting ? "Posting..." : "Publish thread"}
-            </Button>
+
+          <div>
+            <Label htmlFor="content" className="text-[10px] uppercase tracking-[0.18em] font-mono text-muted-foreground">Body</Label>
+            <div className="mt-1.5 rounded-lg border border-input bg-input/40 overflow-hidden">
+              <FormatToolbar
+                textareaRef={taRef}
+                value={form.content}
+                onChange={(v) => setForm({ ...form, content: v })}
+              />
+              <Textarea
+                ref={taRef}
+                id="content"
+                placeholder={"What's on your mind?\n\n**Bold**, *italic*, `code`, > quote, ||spoilers||, [links](https://...)"}
+                rows={8}
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                maxLength={5000}
+                className="border-0 rounded-none focus-visible:ring-0 font-mono text-sm"
+              />
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1 font-mono">
+              <span>Tip: drafts save automatically</span>
+              <span>{form.content.length}/5000</span>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <button
+              type="button"
+              onClick={() => { setForm({ title: "", content: "", category: "general", cw: "" }); localStorage.removeItem(DRAFT_KEY); }}
+              className="text-xs text-muted-foreground hover:text-destructive"
+            >
+              Clear draft
+            </button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit" disabled={posting} className="bg-gradient-primary">
+                {posting ? "Posting..." : "Publish thread"}
+              </Button>
+            </div>
           </div>
         </form>
       )}
 
       {!user && (
-        <div className="glass rounded-2xl p-6 mb-6 text-center text-sm text-muted-foreground">
+        <div className="surface rounded-2xl p-6 mb-6 text-center text-sm text-muted-foreground">
           <Link to="/login" className="text-primary-glow hover:underline font-medium">Log in</Link> or{" "}
           <Link to="/signup" className="text-primary-glow hover:underline font-medium">create an account</Link> to start posting.
         </div>
@@ -231,25 +306,26 @@ function Community() {
 
       {/* Posts */}
       {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="glass rounded-2xl p-5 animate-pulse h-28" />
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="surface rounded-xl p-5 animate-pulse h-24" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center text-muted-foreground">
+        <div className="surface rounded-2xl p-12 text-center text-muted-foreground">
           {search || filter !== "all" ? "Nothing matches your filter." : "No posts yet. Be the first!"}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="surface rounded-2xl divide-y divide-border overflow-hidden shadow-card">
           {filtered.map((p) => {
             const cat = getCategory(p.category);
+            const { warning, body } = splitContentWarning(p.content);
             return (
               <Link
                 key={p.id}
                 to="/forums/$postId"
                 params={{ postId: p.id }}
-                className="block glass rounded-2xl p-5 shadow-card hover:shadow-glow hover:-translate-y-0.5 hover:border-primary/40 transition-all border border-transparent"
+                className="block px-5 py-4 surface-hover"
               >
                 <div className="flex items-start gap-4">
                   <UserAvatar
@@ -259,19 +335,25 @@ function Community() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={cn("text-[10px] font-bold uppercase tracking-wide border rounded-full px-2 py-0.5", cat.color)}>
+                      <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide border rounded-full px-2 py-0.5", cat.chip)}>
+                        <span className={cn("h-1 w-1 rounded-full", cat.dot)} />
                         {cat.label}
                       </span>
+                      {warning && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide border border-amber-500/30 bg-amber-500/10 text-amber-200 rounded-full px-2 py-0.5">
+                          <EyeOffIcon className="h-2.5 w-2.5" /> CW
+                        </span>
+                      )}
                       <h3 className="font-semibold text-base sm:text-lg truncate">{p.title}</h3>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{p.content}</p>
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{warning ? "(hidden — content warning)" : body}</p>
                     <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                       <span className="font-medium text-foreground">@{p.author?.username ?? "unknown"}</span>
                       <RoleBadge role={topRole(p.authorRoles)} />
-                      <span>·</span>
+                      <span className="text-muted-foreground/50">·</span>
                       <span className="inline-flex items-center gap-1"><MessageSquare className="h-3 w-3" /> {p.replyCount}</span>
-                      <span>·</span>
-                      <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                      <span className="text-muted-foreground/50">·</span>
+                      <span className="font-mono text-[11px]">{timeAgo(p.created_at)}</span>
                       <span className="ml-auto" onClick={(e) => e.preventDefault()}>
                         <ReportButton targetType="post" targetId={p.id} size="xs" />
                       </span>
@@ -285,4 +367,16 @@ function Community() {
       )}
     </main>
   );
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
 }
