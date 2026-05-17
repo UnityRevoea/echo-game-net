@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { MessageSquare, Plus, Search, X, AlertTriangle, EyeOff as EyeOffIcon, Pin } from "lucide-react";
+import { MessageSquare, Plus, Search, X, AlertTriangle, EyeOff as EyeOffIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, topRole, type AppRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
