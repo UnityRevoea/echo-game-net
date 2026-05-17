@@ -16,6 +16,7 @@ import { Route as CommunityRouteImport } from './routes/community'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
+import { Route as GamesGameIdRouteImport } from './routes/games.$gameId'
 import { Route as ForumsPostIdRouteImport } from './routes/forums.$postId'
 
 const SignupRoute = SignupRouteImport.update({
@@ -53,6 +54,11 @@ const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
   path: '/profile/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesGameIdRoute = GamesGameIdRouteImport.update({
+  id: '/$gameId',
+  path: '/$gameId',
+  getParentRoute: () => GamesRoute,
+} as any)
 const ForumsPostIdRoute = ForumsPostIdRouteImport.update({
   id: '/forums/$postId',
   path: '/forums/$postId',
@@ -63,20 +69,22 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/community': typeof CommunityRoute
-  '/games': typeof GamesRoute
+  '/games': typeof GamesRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/forums/$postId': typeof ForumsPostIdRoute
+  '/games/$gameId': typeof GamesGameIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/community': typeof CommunityRoute
-  '/games': typeof GamesRoute
+  '/games': typeof GamesRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/forums/$postId': typeof ForumsPostIdRoute
+  '/games/$gameId': typeof GamesGameIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
 }
 export interface FileRoutesById {
@@ -84,10 +92,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/community': typeof CommunityRoute
-  '/games': typeof GamesRoute
+  '/games': typeof GamesRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/forums/$postId': typeof ForumsPostIdRoute
+  '/games/$gameId': typeof GamesGameIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/forums/$postId'
+    | '/games/$gameId'
     | '/profile/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/forums/$postId'
+    | '/games/$gameId'
     | '/profile/$username'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/forums/$postId'
+    | '/games/$gameId'
     | '/profile/$username'
   fileRoutesById: FileRoutesById
 }
@@ -127,7 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   CommunityRoute: typeof CommunityRoute
-  GamesRoute: typeof GamesRoute
+  GamesRoute: typeof GamesRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ForumsPostIdRoute: typeof ForumsPostIdRoute
@@ -185,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/$gameId': {
+      id: '/games/$gameId'
+      path: '/$gameId'
+      fullPath: '/games/$gameId'
+      preLoaderRoute: typeof GamesGameIdRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/forums/$postId': {
       id: '/forums/$postId'
       path: '/forums/$postId'
@@ -195,11 +214,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface GamesRouteChildren {
+  GamesGameIdRoute: typeof GamesGameIdRoute
+}
+
+const GamesRouteChildren: GamesRouteChildren = {
+  GamesGameIdRoute: GamesGameIdRoute,
+}
+
+const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CommunityRoute: CommunityRoute,
-  GamesRoute: GamesRoute,
+  GamesRoute: GamesRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ForumsPostIdRoute: ForumsPostIdRoute,

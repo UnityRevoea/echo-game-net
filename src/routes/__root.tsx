@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
 import { Nav } from "@/components/Nav";
+import { BannedGate } from "@/components/BannedGate";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -91,6 +92,7 @@ function RootComponent() {
       <AuthProvider>
         <Nav />
         <Outlet />
+        <BannedGate />
         <Toaster richColors theme="dark" />
       </AuthProvider>
     </QueryClientProvider>
