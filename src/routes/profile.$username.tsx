@@ -221,6 +221,34 @@ function ProfilePage() {
           </div>
         )}
       </section>
+
+      {isOwner && (
+        <section className="mt-12 border-t border-destructive/30 pt-6">
+          <h2 className="text-lg font-semibold text-destructive">Danger zone</h2>
+          <p className="text-xs text-muted-foreground mt-1">Permanently delete your account, posts, replies, badges and roles. This cannot be undone.</p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" className="mt-3">
+                <Trash2 className="h-3 w-3 mr-1" /> Delete my account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently removes @{profile.username}, all your posts, replies, and badges. There's no going back.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={doDelete} disabled={deleting} className="bg-destructive hover:bg-destructive/90">
+                  {deleting ? "Deleting..." : "Yes, delete forever"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </section>
+      )}
     </main>
   );
 }
