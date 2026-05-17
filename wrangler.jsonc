@@ -1,10 +1,9 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "echo-game-net",
   "compatibility_date": "2026-05-17",
-  "compatibility_flags": ["nodejs_compat"],
-  "main": "dist/server/index.js",
-  "assets": {
-    "directory": "dist/client"
-  }
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "main": "@tanstack/react-start/server-entry"
 }
