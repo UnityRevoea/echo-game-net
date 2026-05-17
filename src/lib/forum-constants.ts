@@ -1,18 +1,23 @@
 export const POST_CATEGORIES = [
-  { value: "general", label: "General", color: "bg-violet-500/15 text-violet-300 border-violet-500/30" },
-  { value: "games", label: "Games", color: "bg-blue-500/15 text-blue-300 border-blue-500/30" },
-  { value: "lfg", label: "Looking for Group", color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
-  { value: "help", label: "Help & Support", color: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-  { value: "news", label: "News", color: "bg-pink-500/15 text-pink-300 border-pink-500/30" },
-  { value: "off-topic", label: "Off-Topic", color: "bg-slate-500/15 text-slate-300 border-slate-500/30" },
-  { value: "memes", label: "Memes", color: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30" },
-  { value: "creations", label: "Creations", color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30" },
+  { value: "general", label: "General", dot: "bg-violet-400", chip: "bg-violet-500/10 text-violet-200 border-violet-500/25" },
+  { value: "games", label: "Games", dot: "bg-blue-400", chip: "bg-blue-500/10 text-blue-200 border-blue-500/25" },
+  { value: "lfg", label: "LFG", dot: "bg-emerald-400", chip: "bg-emerald-500/10 text-emerald-200 border-emerald-500/25" },
+  { value: "help", label: "Help", dot: "bg-amber-400", chip: "bg-amber-500/10 text-amber-200 border-amber-500/25" },
+  { value: "news", label: "News", dot: "bg-pink-400", chip: "bg-pink-500/10 text-pink-200 border-pink-500/25" },
+  { value: "off-topic", label: "Off-Topic", dot: "bg-slate-400", chip: "bg-slate-500/10 text-slate-200 border-slate-500/25" },
+  { value: "memes", label: "Memes", dot: "bg-fuchsia-400", chip: "bg-fuchsia-500/10 text-fuchsia-200 border-fuchsia-500/25" },
+  { value: "creations", label: "Creations", dot: "bg-cyan-400", chip: "bg-cyan-500/10 text-cyan-200 border-cyan-500/25" },
+  { value: "guides", label: "Guides", dot: "bg-lime-400", chip: "bg-lime-500/10 text-lime-200 border-lime-500/25" },
 ] as const;
 
 export type PostCategory = (typeof POST_CATEGORIES)[number]["value"];
 
 export function getCategory(value: string | null | undefined) {
   return POST_CATEGORIES.find((c) => c.value === value) ?? POST_CATEGORIES[0];
+}
+
+export function categoryChipClass(value: string | null | undefined) {
+  return getCategory(value).chip;
 }
 
 export const REPORT_CATEGORIES = [
