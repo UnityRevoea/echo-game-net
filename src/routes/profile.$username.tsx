@@ -1,13 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Calendar, Trophy, Ban, Camera, Clock, Save, Pencil } from "lucide-react";
+import { Calendar, Trophy, Ban, Camera, Clock, Save, Pencil, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { topRole, useAuth, type AppRole, type Profile } from "@/lib/auth";
 import { RoleBadge } from "@/components/RoleBadge";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deleteMyAccount } from "@/lib/account.functions";
 
 export const Route = createFileRoute("/profile/$username")({
   component: ProfilePage,
@@ -22,13 +28,13 @@ interface BadgeItem {
   awarded_at: string;
 }
 
-interface ProfileExt extends Profile {
-  suspended_until?: string | null;
-}
+type ProfileExt = Profile;
 
 function ProfilePage() {
   const { username } = Route.useParams();
-  const { user, refresh } = useAuth();
+  const { user, refresh, signOut } = useAuth();
+  const navigate = useNavigate();
+  const callDelete = useServerFn(deleteMyAccount);
   const [profile, setProfile] = useState<ProfileExt | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [badges, setBadges] = useState<BadgeItem[]>([]);
@@ -38,7 +44,21 @@ function ProfilePage() {
   const [bioText, setBioText] = useState("");
   const [savingBio, setSavingBio] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const doDelete = async () => {
+    setDeleting(true);
+    try {
+      await callDelete();
+      await signOut();
+      toast.success("Account deleted");
+      navigate({ to: "/" });
+    } catch (e) {
+      setDeleting(false);
+      toast.error(e instanceof Error ? e.message : "Failed to delete account");
+    }
+  };
 
   const load = async () => {
     setLoading(true);
